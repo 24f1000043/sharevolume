@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Data for BAKER HUGHES HOLDINGS LLC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg-color: #ffffff;
+            --text-color: #102a43;
+            --heading-color: #063970;
+            --accent-green: #28a745;
+            --accent-red: #dc3545;
+            --shadow-color: rgba(16, 42, 67, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        main {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--heading-color);
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            word-wrap: break-word;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border-top: 5px solid;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px var(--shadow-color);
+        }
+
+        .max-card {
+            border-top-color: var(--accent-green);
+        }
+
+        .min-card {
+            border-top-color: var(--accent-red);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--heading-color);
+            font-size: 1.25rem;
+        }
+
+        .card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            word-wrap: break-word;
+        }
+
+        .max-card .value {
+            color: var(--accent-green);
+        }
+
+        .min-card .value {
+            color: var(--accent-red);
+        }
+        
+        .card .year {
+            font-size: 1rem;
+            color: #627d98;
+            margin: 0;
+        }
+        
+        footer {
+            margin-top: 3rem;
+            font-size: 0.875rem;
+            color: #627d98;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border: 1px solid #c62828;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+            .card-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+             .card .value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>
+            Common Stock Shares Outstanding for <span id="share-entity-name">BAKER HUGHES HOLDINGS LLC</span>
+        </h1>
+        <div id="error-container" class="error" style="display: none;"></div>
+        <div class="card-container">
+            <div class="card max-card">
+                <h2>Maximum Shares</h2>
+                <p class="value" id="share-max-value">1,015,000,000</p>
+                <p class="year">Fiscal Year: <span id="share-max-fy">2024</span></p>
+            </div>
+            <div class="card min-card">
+                <h2>Minimum Shares</h2>
+                <p class="value" id="share-min-value">1,003,000,000</p>
+                <p class="year">Fiscal Year: <span id="share-min-fy">2021</span></p>
+            </div>
+        </div>
+        <footer>
+            <p>Data sourced from the U.S. Securities and Exchange Commission (SEC) EDGAR API.</p>
+            <p>Displaying data for fiscal years after 2020.</p>
+        </footer>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const defaultCik = '0001701605'; // Baker Hughes CIK
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const cikParam = urlParams.get('CIK');
+            
+            // Use CIK from URL if valid, otherwise use default
+            const cik = (cikParam && cikParam.match(/^\d{1,10}$/)) ? cikParam : defaultCik;
+            
+            const formattedCik = cik.padStart(10, '0');
+
+            fetchAndRenderData(formattedCik);
+        });
+
+        const updateDOM = (data) => {
+            const { entityName, max, min } = data;
+            
+            const formatNumber = (num) => num.toLocaleString('en-US');
+
+            document.title = `Share Data for ${entityName}`;
+            document.getElementById('share-entity-name').textContent = entityName;
+
+            document.getElementById('share-max-value').textContent = formatNumber(max.val);
+            document.getElementById('share-max-fy').textContent = max.fy;
+
+            document.getElementById('share-min-value').textContent = formatNumber(min.val);
+            document.getElementById('share-min-fy').textContent = min.fy;
+        };
+        
+        const showError = (message) => {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+        };
+
+        const hideError = () => {
+             const errorContainer = document.getElementById('error-container');
+             errorContainer.style.display = 'none';
+        };
+
+        const fetchAndRenderData = async (cik) => {
+            hideError();
+            const url = `https://data.sec.gov/api/xbrl/companyconcept/CIK${cik}/dei/EntityCommonStockSharesOutstanding.json`;
+
+            // Note: The SEC requires a descriptive User-Agent header (e.g., 'CompanyName support@company.com').
+            // This is not possible to set in a client-side fetch request due to browser security restrictions.
+            // For a production application, this API call should be made from a server-side backend or a proxy
+            // where the User-Agent can be properly set.
+            
+            try {
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                     const errorJson = await response.json().catch(() => null);
+                     const errorTitle = errorJson?.title || `HTTP Error`;
+                     const errorDetail = errorJson?.detail || `Please check the CIK and try again.`
+                     throw new Error(`${response.status} ${errorTitle}: ${errorDetail}`);
+                }
+                
+                const rawData = await response.json();
+
+                const entityName = rawData.entityName;
+                const sharesData = rawData.units.shares;
+
+                const filteredData = sharesData.filter(entry => 
+                    entry.fy > 2020 && 
+                    typeof entry.val === 'number' &&
+                    entry.form.startsWith('10-') // Typically 10-K, 10-Q are most reliable
+                );
+
+                if (filteredData.length === 0) {
+                     throw new Error(`No reliable share data (Form 10-K/10-Q) found after FY 2020 for CIK ${cik}.`);
+                }
+                
+                const result = filteredData.reduce((acc, current) => {
+                    if (!acc.max || current.val > acc.max.val) {
+                        acc.max = { val: current.val, fy: current.fy };
+                    }
+                    if (!acc.min || current.val < acc.min.val) {
+                        acc.min = { val: current.val, fy: current.fy };
+                    }
+                    return acc;
+                }, { max: null, min: null });
+
+                updateDOM({
+                    entityName,
+                    ...result
+                });
+
+            } catch (error) {
+                console.error('Error fetching or processing data:', error);
+                showError(error.message);
+            }
+        };
+    </script>
+</body>
+</html>
